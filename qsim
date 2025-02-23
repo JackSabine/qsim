@@ -1,0 +1,126 @@
+#!/usr/bin/python
+
+import TestRunner as TestRunner
+import RegressionRunner as RegressionRunner
+import os
+import subprocess
+
+import argparse
+
+class SimRunnerArguments:
+    test_or_regression_name: str
+    is_a_regression_run: bool
+    compile_only: bool
+    clean_build: bool
+
+    run_dir: str
+    build_dir: str
+    seed: int
+    uvm_verbosity: str
+    print_stdout: bool
+    highlight_stdout: bool
+
+    regressions_dir: str
+
+
+parser = argparse.ArgumentParser(description="General compilation and simulation runner script")
+
+# General arguments
+parser.add_argument("test_or_regression_name", type=str, nargs="?",
+                    help="Specify the test or regression to run")
+
+parser.add_argument("--run_dir", type=str,
+                    default=os.environ["WORKDIR"] + "/runs",
+                    help="Optionally specify the base run directory (defaults to work dir)")
+
+parser.add_argument("--build_dir", type=str,
+                    default=os.environ["WORKDIR"],
+                    help="Optionally specify where to find the built project (defaults to work dir)")
+
+parser.add_argument("-R", "--regression", action='store_true', dest="is_a_regression_run",
+                    help="Run a regression")
+
+
+parser.add_argument("-C", "--compile-only", action="store_true", dest="compile_only",
+                    help="Only run the compile step, do not run a simulation")
+
+parser.add_argument("-c", "--clean", action="store_true", dest="clean_build",
+                    help="Force a rebuild of the simulator binary")
+
+# Test-specific arguments
+parser.add_argument("--seed", type=int,
+                    help="Specify the simulation seed")
+
+parser.add_argument("--uvm_verbosity", type=str, default="UVM_LOW",
+                    help="Specify the UVM_VERBOSITY level")
+
+parser.add_argument("--print", action='store_true', dest="print_stdout",
+                    help="Print output to STDOUT")
+
+parser.add_argument("--highlight", action='store_true', dest="highlight_stdout", default=True,
+                    help="Apply highlighting to keywords on stdout (pair with --print)")
+
+# Regression-specific arguments
+parser.add_argument("--regressions_dir", type=str,
+                    default=os.environ["DV_REGRESSION_LISTS_DIR"],
+                    help="Optionally specify where regression the lists are found (default to $DV_REGRESSION_LISTS_DIR) ")
+
+
+
+def compile(clean_build: bool) -> None:
+    try:
+        if (clean_build):
+            print("Running a clean build")
+            subprocess.run(" ".join(["make", "clean"]), shell=True)
+
+        subprocess.run(
+            "make",
+            check=True,
+            timeout=40
+        )
+    except subprocess.CalledProcessError:
+        print("Make failed")
+        raise
+    except subprocess.TimeoutExpired:
+        print("Make timed out")
+        raise
+    return
+
+
+def main() -> None:
+    args: SimRunnerArguments
+    regression_args: RegressionRunner.RegressionRunnerArguments
+    test_args: TestRunner.TestRunnerArguments
+
+    args = parser.parse_args(namespace=SimRunnerArguments())
+
+    compile(args.clean_build)
+
+    if (args.compile_only):
+        return
+
+    if args.test_or_regression_name is None:
+        print("No simulation or regression to run")
+        return
+
+    if args.is_a_regression_run:
+        regression_args = RegressionRunner.RegressionRunnerArguments()
+        regression_args.regression_name = args.test_or_regression_name
+        regression_args.regressions_dir = args.regressions_dir
+        regression_args.run_dir = args.run_dir
+
+        RegressionRunner.run_regression(regression_args)
+    else:
+        test_args = TestRunner.TestRunnerArguments()
+        test_args.build_dir = args.build_dir
+        test_args.highlight_stdout = args.highlight_stdout
+        test_args.print_stdout = args.print_stdout
+        test_args.run_dir = args.run_dir
+        test_args.seed = args.seed
+        test_args.test_name = args.test_or_regression_name
+        test_args.uvm_verbosity = args.uvm_verbosity
+
+        TestRunner.run_test(test_args)
+
+if __name__ == "__main__":
+    main()
