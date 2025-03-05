@@ -7,8 +7,8 @@ import pathlib
 import os
 import sys
 import re
-from enum import Enum
 import shutil
+from Results import TestResult
 
 
 
@@ -59,12 +59,6 @@ class bcolors:
     WARNING = '\033[01;93m'
     FAIL = '\033[01;91m'
     ENDC = '\033[0m'
-
-
-class TestResult(Enum):
-    PASS = 0
-    FAIL = 1
-    TIMEOUT = 2
 
 
 
@@ -173,16 +167,16 @@ def run_test(args: TestRunnerArguments) -> TestResult:
 
 
 
-def main() -> None:
+def main() -> TestResult:
     args: TestRunnerArguments
     result: TestResult
 
     args = parser.parse_args(namespace=TestRunnerArguments())
     result = run_test(args)
     print(f"Test finished with status {result.name}")
-    exit(result.value)
+    return result.value
 
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())

@@ -7,8 +7,9 @@ import time
 import re
 from random import randint
 from multiprocessing import Process, Queue
+from Results import TestResult, RegressionResult
 
-import TestRunner as TestRunner
+import TestRunner
 
 
 class RegressionRunnerArguments:
@@ -84,7 +85,7 @@ def run_test_wrapper(q: Queue, args: TestRunner.TestRunnerArguments) -> None:
 
 
 
-def run_regression(args: RegressionRunnerArguments) -> None:
+def run_regression(args: RegressionRunnerArguments) -> RegressionResult:
     regression_run_path: pathlib.Path
     tests_and_arguments_to_run: list[TestRunner.TestRunnerArguments]
 
@@ -127,21 +128,21 @@ def run_regression(args: RegressionRunnerArguments) -> None:
             print(result_str)
             s.write(result_str)
 
-    if all(r == TestRunner.TestResult.PASS for r in test_results):
+    if all(r == TestResult.PASS for r in test_results):
         print("PASS")
+        return RegressionResult.PASS
     else:
         print("FAIL")
+        return RegressionResult.FAIL
 
 
-    return
 
-
-def main() -> None:
+def main() -> RegressionResult:
     args: RegressionRunnerArguments
     args = parser.parse_args(namespace=RegressionRunnerArguments())
-    run_regression(args)
+    return run_regression(args)
 
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())

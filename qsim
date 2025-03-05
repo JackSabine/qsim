@@ -87,7 +87,7 @@ def compile(clean_build: bool) -> None:
     return
 
 
-def main() -> None:
+def main() -> int:
     args: SimRunnerArguments
     regression_args: RegressionRunner.RegressionRunnerArguments
     test_args: TestRunner.TestRunnerArguments
@@ -109,7 +109,7 @@ def main() -> None:
         regression_args.regressions_dir = args.regressions_dir
         regression_args.run_dir = args.run_dir
 
-        RegressionRunner.run_regression(regression_args)
+        return int(RegressionRunner.run_regression(regression_args).value)
     else:
         test_args = TestRunner.TestRunnerArguments()
         test_args.build_dir = args.build_dir
@@ -120,7 +120,7 @@ def main() -> None:
         test_args.test_name = args.test_or_regression_name
         test_args.uvm_verbosity = args.uvm_verbosity
 
-        TestRunner.run_test(test_args)
+        return int(TestRunner.run_test(test_args).value)
 
 if __name__ == "__main__":
-    main()
+    exit(main())
