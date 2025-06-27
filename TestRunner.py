@@ -96,7 +96,7 @@ def create_test_run_directory(build_dir: str, run_dir: str, test_name: str, seed
         shutil.copyfile(so_binary, test_path / so_binary.name)
 
     for waveconfig_file in workarea_path.glob("*.wcfg"):
-        shutil.copyfile(waveconfig_file, test_path / waveconfig_file.name)
+        (test_path / waveconfig_file.name).symlink_to(waveconfig_file)
 
     return test_path
 
