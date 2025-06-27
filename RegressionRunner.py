@@ -78,7 +78,7 @@ def parse_regression_file(regressions_dir: str, regression_name: str, regression
     return test_args
 
 
-def run_test_wrapper(q: Queue, args: TestRunner.TestRunnerArguments) -> None:
+def run_test_wrapper(q: Queue[tuple[str, int, TestResult]], args: TestRunner.TestRunnerArguments) -> None:
     result = TestRunner.run_test(args)
     q.put((args.test_name, args.seed, result))
     print(f"{args.test_name} finished with {result} code")
@@ -97,7 +97,7 @@ def run_regression(args: RegressionRunnerArguments) -> RegressionResult:
     summary_file_path: pathlib.Path = regression_run_path / "results.txt"
 
     jobs: list[Process] = []
-    queue: Queue = Queue()
+    queue: Queue[tuple[str, int, TestResult]] = Queue()
 
     print("----------------------------")
     print(f"{args.regression_name} regression tests")
@@ -125,8 +125,8 @@ def run_regression(args: RegressionRunnerArguments) -> RegressionResult:
     with summary_file_path.open("w", encoding="utf-8") as s:
         while not queue.empty():
             test_name, seed, result = queue.get()
-            result_str = f"{test_name:<20}({seed:>10d}) : {result.name}"
-            print(result_str)
+            result_str = f"{test_name:<20}({seed:>10d}) : {result.name}\n"
+            print(result_str, end="") # result_str already has newline
             s.write(result_str)
 
     if all(r == TestResult.PASS for r in test_results):
@@ -146,4 +146,4 @@ def main() -> RegressionResult:
 
 
 if __name__ == "__main__":
-    exit(main())
+    exit(main().value)

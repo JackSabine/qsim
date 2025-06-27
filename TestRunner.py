@@ -121,10 +121,11 @@ def run_simulation(test_path: pathlib.Path, seed: int, test_name: str, uvm_verbo
         f.write("RUN COMMAND: " + " ".join(cmd))
         process = subprocess.Popen(" ".join(cmd), shell=True, stdout=subprocess.PIPE)
 
-        for line in iter(process.stdout.readline, b""):
-            f.write(line.decode("utf-8"))
-            if print_stdout:
-                print_test_output(line.decode("utf-8"), highlight_stdout)
+        if process.stdout is not None:
+            for line in iter(process.stdout.readline, b""):
+                f.write(line.decode("utf-8"))
+                if print_stdout:
+                    print_test_output(line.decode("utf-8"), highlight_stdout)
 
     return
 
@@ -185,9 +186,9 @@ def main() -> TestResult:
     args = parser.parse_args(namespace=TestRunnerArguments())
     result = run_test(args)
     print(f"Test finished with status {result.name}")
-    return result.value
+    return result
 
 
 
 if __name__ == "__main__":
-    exit(main())
+    exit(main().value)

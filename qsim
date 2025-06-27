@@ -97,7 +97,7 @@ def main() -> int:
     compile(args.clean_build)
 
     if (args.compile_only):
-        return
+        return 0
 
     if args.test_or_regression_name is None:
         print("No simulation or regression to run")
@@ -109,7 +109,7 @@ def main() -> int:
         regression_args.regressions_dir = args.regressions_dir
         regression_args.run_dir = args.run_dir
 
-        return int(RegressionRunner.run_regression(regression_args).value)
+        return RegressionRunner.run_regression(regression_args).value
     else:
         test_args = TestRunner.TestRunnerArguments()
         test_args.build_dir = args.build_dir
@@ -120,7 +120,7 @@ def main() -> int:
         test_args.test_name = args.test_or_regression_name
         test_args.uvm_verbosity = args.uvm_verbosity
 
-        return int(TestRunner.run_test(test_args).value)
+        return TestRunner.run_test(test_args).value
 
 if __name__ == "__main__":
     exit(main())
