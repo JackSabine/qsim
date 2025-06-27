@@ -27,16 +27,17 @@ parser.add_argument("regressions_dir", type=str, nargs="?",
                     help="Optionally specify where regression the lists are found (default to $DV_REGRESSION_LISTS_DIR) ")
 
 parser.add_argument("--run_dir", type=str,
-                    default=os.environ["WORKDIR"] + "/regressions",
+                    default=os.environ["WORKAREA"] + "/runs",
                     help="Optionally specify the base run directory (defaults to $WORKDIR/regressions)")
 
 
 
 def create_regression_path(run_dir: str, regression_name: str) -> pathlib.Path:
-    now: float = time.time()
-    formatted_time_str = time.strftime("%Y-%m-%d--%H-%M-%S", time.localtime(now))
+    regression_iteration: int = 1
+    while next(pathlib.Path(run_dir).glob(f"{regression_name}.{regression_iteration}*"), None) is not None:
+        regression_iteration += 1
 
-    regression_run_path = pathlib.Path(f"{run_dir}/{regression_name}--{formatted_time_str}")
+    regression_run_path = pathlib.Path(f"{run_dir}/{regression_name}.{regression_iteration}")
 
     if regression_run_path.exists(): return regression_run_path
 

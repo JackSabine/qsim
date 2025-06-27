@@ -30,7 +30,7 @@ parser.add_argument("test_or_regression_name", type=str, nargs="?",
                     help="Specify the test or regression to run")
 
 parser.add_argument("--run_dir", type=str,
-                    default=os.environ["WORKDIR"] + "/runs",
+                    default=os.environ["WORKAREA"] + "/runs",
                     help="Optionally specify the base run directory (defaults to work dir)")
 
 parser.add_argument("--build_dir", type=str,

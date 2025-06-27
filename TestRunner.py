@@ -26,7 +26,7 @@ def add_arguments_to_argument_parser(parser: argparse.ArgumentParser) -> None:
                         help="Specify the UVM test to run")
 
     parser.add_argument("--run_dir", type=str,
-                        default=os.environ["WORKDIR"] + "/runs",
+                        default=os.environ["WORKAREA"] + "/runs",
                         help="Optionally specify the base run directory (defaults to work dir)")
 
     parser.add_argument("--build_dir", type=str,
@@ -75,17 +75,28 @@ def print_test_output(test_output: str, highlight: bool) -> None:
 
 
 def create_test_run_directory(build_dir: str, run_dir: str, test_name: str, seed: int) -> pathlib.Path:
-    test_path = pathlib.Path(f"{run_dir}/{test_name}_{seed}")
+    run_path = pathlib.Path(run_dir)
     build_path = pathlib.Path(build_dir)
+    workarea_path = pathlib.Path(os.environ["WORKAREA"])
 
-    if test_path.exists(): return test_path
+    run_iteration: int = 1
+    while (run_path / f"{test_name}.{run_iteration}").exists():
+        run_iteration += 1
+
+    test_path = run_path / f"{test_name}.{run_iteration}"
 
     test_path.mkdir(parents=True)
+
+    with open(test_path / str(seed), "w") as f:
+        f.write(str(seed))
 
     shutil.copytree(build_path / pathlib.Path("xsim.dir"), test_path / pathlib.Path("xsim.dir"))
 
     for so_binary in build_path.glob("*.so"):
         shutil.copyfile(so_binary, test_path / so_binary.name)
+
+    for waveconfig_file in workarea_path.glob("*.wcfg"):
+        shutil.copyfile(waveconfig_file, test_path / waveconfig_file.name)
 
     return test_path
 
