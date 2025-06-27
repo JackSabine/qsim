@@ -78,7 +78,7 @@ def parse_regression_file(regressions_dir: str, regression_name: str, regression
     return test_args
 
 
-def run_test_wrapper(q: Queue[tuple[str, int, TestResult]], args: TestRunner.TestRunnerArguments) -> None:
+def run_test_wrapper(q: "Queue[tuple[str, int, TestResult]]", args: TestRunner.TestRunnerArguments) -> None:
     result = TestRunner.run_test(args)
     q.put((args.test_name, args.seed, result))
     print(f"{args.test_name} finished with {result} code")
