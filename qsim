@@ -17,7 +17,7 @@ class SimRunnerArguments:
     build_dir: str
     seed: int
     uvm_verbosity: str
-    print_stdout: bool
+    no_print_stdout: bool
     highlight_stdout: bool
 
     regressions_dir: str
@@ -54,8 +54,8 @@ parser.add_argument("--seed", type=int,
 parser.add_argument("--uvm_verbosity", type=str, default="UVM_LOW",
                     help="Specify the UVM_VERBOSITY level")
 
-parser.add_argument("--print", action='store_true', dest="print_stdout",
-                    help="Print output to STDOUT")
+parser.add_argument("--no_print", action='store_true', dest="no_print_stdout",
+                    help="Don't print output to STDOUT")
 
 parser.add_argument("--highlight", action='store_true', dest="highlight_stdout", default=True,
                     help="Apply highlighting to keywords on stdout (pair with --print)")
@@ -114,7 +114,7 @@ def main() -> int:
         test_args = TestRunner.TestRunnerArguments()
         test_args.build_dir = args.build_dir
         test_args.highlight_stdout = args.highlight_stdout
-        test_args.print_stdout = args.print_stdout
+        test_args.no_print_stdout = args.no_print_stdout
         test_args.run_dir = args.run_dir
         test_args.seed = args.seed
         test_args.test_name = args.test_or_regression_name

@@ -18,7 +18,7 @@ class TestRunnerArguments:
     build_dir: str
     seed: int
     uvm_verbosity: str
-    print_stdout: bool
+    no_print_stdout: bool
     highlight_stdout: bool
 
 def add_arguments_to_argument_parser(parser: argparse.ArgumentParser) -> None:
@@ -39,8 +39,8 @@ def add_arguments_to_argument_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--uvm_verbosity", type=str, default="UVM_LOW",
                         help="Specify the UVM_VERBOSITY level")
 
-    parser.add_argument("--print", action='store_true', dest="print_stdout",
-                        help="Print output to STDOUT")
+    parser.add_argument("--no_print", action='store_true', dest="no_print_stdout",
+                        help="Don't print output to STDOUT")
 
     parser.add_argument("--highlight", action='store_true', dest="highlight_stdout", default=True,
                         help="Apply highlighting to keywords on stdout (pair with --print)")
@@ -174,7 +174,7 @@ def run_test(args: TestRunnerArguments) -> TestResult:
 
     seed = args.seed if args.seed != None else randint(0, 4294967295)
     test_path = create_test_run_directory(args.build_dir, args.run_dir, args.test_name, seed)
-    run_simulation(test_path, seed, args.test_name, args.uvm_verbosity, args.print_stdout, args.highlight_stdout)
+    run_simulation(test_path, seed, args.test_name, args.uvm_verbosity, not args.no_print_stdout, args.highlight_stdout)
     return determine_test_pass_fail(test_path)
 
 

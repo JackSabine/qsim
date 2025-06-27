@@ -74,6 +74,7 @@ def parse_regression_file(regressions_dir: str, regression_name: str, regression
             test_args[-1].run_dir = str(regression_run_path)
             if test_args[-1].seed == None:
                 test_args[-1].seed = randint(0, 4294967295)
+            test_args[-1].no_print_stdout = True
 
     return test_args
 
