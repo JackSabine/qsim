@@ -20,6 +20,7 @@ class TestRunnerArguments:
     uvm_verbosity: str
     no_print_stdout: bool
     highlight_stdout: bool
+    plusargs: list[str]
 
 def add_arguments_to_argument_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("test_name", type=str,
@@ -44,6 +45,9 @@ def add_arguments_to_argument_parser(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--highlight", action='store_true', dest="highlight_stdout", default=True,
                         help="Apply highlighting to keywords on stdout (pair with --print)")
+
+    parser.add_argument("--plusargs", nargs="+", dest="plusargs", default=list(),
+                    help="Pass $test$plusargs or $value$plusargs to the simulator")
 
 
 
@@ -102,7 +106,12 @@ def create_test_run_directory(build_dir: str, run_dir: str, test_name: str, seed
 
 
 
-def run_simulation(test_path: pathlib.Path, seed: int, test_name: str, uvm_verbosity: str, print_stdout: bool, highlight_stdout: bool):
+def interleave_equal_length_lists(a: list[str], b: list[str]) -> list[str]:
+    return [val for pair in zip(a, b) for val in pair]
+
+
+
+def run_simulation(test_path: pathlib.Path, seed: int, test_name: str, uvm_verbosity: str, print_stdout: bool, highlight_stdout: bool, plusargs: list[str]):
     output_path: pathlib.Path
 
     output_path = test_path / "output.txt"
@@ -116,6 +125,9 @@ def run_simulation(test_path: pathlib.Path, seed: int, test_name: str, uvm_verbo
         "--testplusarg", f"UVM_TESTNAME={test_name}",
         "--testplusarg", f"UVM_VERBOSITY={uvm_verbosity}"
     ]
+
+    formatted_plusargs = interleave_equal_length_lists(["--testplusarg" for _ in plusargs], plusargs)
+    cmd += formatted_plusargs
 
     with output_path.open("w", encoding="utf-8") as f:
         f.write("RUN COMMAND: " + " ".join(cmd))
@@ -174,7 +186,7 @@ def run_test(args: TestRunnerArguments) -> TestResult:
 
     seed = args.seed if args.seed != None else randint(0, 4294967295)
     test_path = create_test_run_directory(args.build_dir, args.run_dir, args.test_name, seed)
-    run_simulation(test_path, seed, args.test_name, args.uvm_verbosity, not args.no_print_stdout, args.highlight_stdout)
+    run_simulation(test_path, seed, args.test_name, args.uvm_verbosity, not args.no_print_stdout, args.highlight_stdout, args.plusargs)
     return determine_test_pass_fail(test_path)
 
 
