@@ -71,41 +71,46 @@ parser.add_argument("--regressions_dir", type=str,
 
 
 
-def compile(clean_build: bool) -> None:
+def compile(clean_build: bool) -> int:
+    subprocess_result: subprocess.CompletedProcess
     try:
         if (clean_build):
             print("Running a clean build")
             subprocess.run(" ".join(["make", "clean"]), shell=True)
 
-        subprocess.run(
+        subprocess_result = subprocess.run(
             "make",
             check=True,
-            timeout=40
+            timeout=120
         )
+
+        return subprocess_result.returncode
     except subprocess.CalledProcessError:
-        print("Make failed")
-        raise
+        print("----- Make failed -----")
+        return 200
     except subprocess.TimeoutExpired:
-        print("Make timed out")
-        raise
-    return
+        print("----- Make timed out -----")
+        return 201
 
 
 def main() -> int:
     args: SimRunnerArguments
     regression_args: RegressionRunner.RegressionRunnerArguments
     test_args: TestRunner.TestRunnerArguments
+    compile_result: int
 
     args = parser.parse_args(namespace=SimRunnerArguments())
 
-    compile(args.clean_build)
+    compile_result = compile(args.clean_build)
+    if compile_result != 0:
+        return compile_result
 
-    if (args.compile_only):
+    if args.compile_only:
         return 0
 
     if args.test_or_regression_name is None:
         print("No simulation or regression to run")
-        return
+        return 1
 
     if args.is_a_regression_run:
         regression_args = RegressionRunner.RegressionRunnerArguments()
