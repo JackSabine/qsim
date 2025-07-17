@@ -196,8 +196,7 @@ def create_test_run_name(args: TestRunnerArguments) -> str:
         sorted_plusargs = sorted(args.plusargs)
         for pa in sorted_plusargs:
             stringified_plusargs.append(re.sub(r"=", r"_", pa))
-        name += "_" + "_".join(stringified_plusargs) + "_"
-    name += f"_{args.seed}"
+        name += "__" + "__".join(stringified_plusargs)
 
     return name
 
