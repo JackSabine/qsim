@@ -1,6 +1,7 @@
 from enum import Enum
+from dataclasses import dataclass
 
-class TestResult(Enum):
+class TestResultCode(Enum):
     PASS = 0
     FAIL = 1
     TIMEOUT = 2
@@ -8,3 +9,8 @@ class TestResult(Enum):
 class RegressionResult(Enum):
     PASS = 0
     FAIL = 1
+
+@dataclass
+class TestResult:
+    code: TestResultCode
+    testname: str

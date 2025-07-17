@@ -7,7 +7,7 @@ import time
 import re
 from random import randint
 from multiprocessing import Process, Queue
-from Results import TestResult, RegressionResult
+from Results import TestResult, TestResultCode, RegressionResult
 
 import TestRunner
 
@@ -79,10 +79,10 @@ def parse_regression_file(regressions_dir: str, regression_name: str, regression
     return test_args
 
 
-def run_test_wrapper(q: "Queue[tuple[str, int, TestResult]]", args: TestRunner.TestRunnerArguments) -> None:
+def run_test_wrapper(q: "Queue[TestResult]", args: TestRunner.TestRunnerArguments) -> None:
     result = TestRunner.run_test(args)
-    q.put((args.test_name, args.seed, result))
-    print(f"{args.test_name} finished with {result} code")
+    q.put(result)
+    print(f"{result.testname} finished with {result.code.name} code")
 
 
 
@@ -93,21 +93,16 @@ def run_regression(args: RegressionRunnerArguments) -> RegressionResult:
 
     regression_run_path = create_regression_path(args.run_dir, args.regression_name)
     tests_and_arguments_to_run = parse_regression_file(args.regressions_dir, args.regression_name, regression_run_path)
-    test_results: list[TestRunner.TestResult] = []
+    test_results: list[TestResultCode] = []
 
     summary_file_path: pathlib.Path = regression_run_path / "results.txt"
 
     jobs: list[Process] = []
-    queue: Queue[tuple[str, int, TestResult]] = Queue()
+    queue: Queue[TestResult] = Queue()
 
     print("----------------------------")
     print(f"{args.regression_name} regression tests")
     print("----------------------------")
-
-    test_list: list[tuple[str, int]] = [(c.test_name, c.seed) for c in tests_and_arguments_to_run]
-    for test_name, seed in test_list:
-        print(f"{test_name}({seed})")
-    print("")
 
     for cmd in tests_and_arguments_to_run:
         p = Process(target=run_test_wrapper, args=(queue, cmd))
@@ -125,12 +120,13 @@ def run_regression(args: RegressionRunnerArguments) -> RegressionResult:
 
     with summary_file_path.open("w", encoding="utf-8") as s:
         while not queue.empty():
-            test_name, seed, result = queue.get()
-            result_str = f"{test_name:<20}({seed:>10d}) : {result.name}\n"
+            result = queue.get()
+            result_str = f"{result.testname} : {result.code.name}\n"
             print(result_str, end="") # result_str already has newline
             s.write(result_str)
+            test_results.append(result.code)
 
-    if all(r == TestResult.PASS for r in test_results):
+    if all(r == TestResultCode.PASS for r in test_results):
         print("PASS")
         return RegressionResult.PASS
     else:

@@ -130,7 +130,7 @@ def main() -> int:
         test_args.uvm_verbosity = args.uvm_verbosity
         test_args.plusargs = args.plusargs
 
-        return TestRunner.run_test(test_args).value
+        return TestRunner.run_test(test_args).code.value
 
 if __name__ == "__main__":
     exit(main())

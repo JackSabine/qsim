@@ -8,7 +8,7 @@ import os
 import sys
 import re
 import shutil
-from Results import TestResult
+from Results import TestResult, TestResultCode
 
 
 
@@ -67,12 +67,14 @@ class bcolors:
 
 
 def print_test_output(test_output: str, highlight: bool) -> None:
-    test_output = re.sub(r"(UVM_INFO)", rf"{bcolors.OKCYAN}\1{bcolors.ENDC}", test_output, flags=re.IGNORECASE)
-    test_output = re.sub(r"(UVM_WARNING)", rf"{bcolors.WARNING}\1{bcolors.ENDC}", test_output, flags=re.IGNORECASE)
-    test_output = re.sub(r"(UVM_ERROR|UVM_FATAL)", rf"{bcolors.FAIL}\1{bcolors.ENDC}", test_output, flags=re.IGNORECASE)
+    if highlight:
+        test_output = re.sub(r"(UVM_INFO)", rf"{bcolors.OKCYAN}\1{bcolors.ENDC}", test_output, flags=re.IGNORECASE)
+        test_output = re.sub(r"(UVM_WARNING)", rf"{bcolors.WARNING}\1{bcolors.ENDC}", test_output, flags=re.IGNORECASE)
+        test_output = re.sub(r"(UVM_ERROR|UVM_FATAL)", rf"{bcolors.FAIL}\1{bcolors.ENDC}", test_output, flags=re.IGNORECASE)
+        test_output = re.sub(r"(ERROR)", rf"{bcolors.FAIL}\1{bcolors.ENDC}", test_output, flags=re.IGNORECASE)
 
-    test_output = re.sub(r"((?:TEST\s+)?PASSED)", rf"{bcolors.OKGREEN}\1{bcolors.ENDC}", test_output)
-    test_output = re.sub(r"((?:TEST\s+)?FAILED)", rf"{bcolors.FAIL}\1{bcolors.ENDC}", test_output)
+        test_output = re.sub(r"((?:TEST\s+)?PASSED)", rf"{bcolors.OKGREEN}\1{bcolors.ENDC}", test_output)
+        test_output = re.sub(r"((?:TEST\s+)?FAILED)", rf"{bcolors.FAIL}\1{bcolors.ENDC}", test_output)
 
     sys.stdout.write(test_output)
 
@@ -142,7 +144,7 @@ def run_simulation(test_path: pathlib.Path, seed: int, test_name: str, uvm_verbo
     return
 
 
-def determine_test_pass_fail(test_path: pathlib.Path) -> TestResult:
+def determine_test_pass_fail(test_path: pathlib.Path) -> TestResultCode:
     output_path: pathlib.Path
     fail_count: int
     pass_string_found: bool
@@ -161,6 +163,9 @@ def determine_test_pass_fail(test_path: pathlib.Path) -> TestResult:
             if re.search(r"uvm_(?:error|fatal)\s+(?!:)", line, re.IGNORECASE):
                 fail_count += 1
 
+            if re.search(r"ERROR: Assertion failed.", line):
+                fail_count += 1
+
             if re.search(r"PH_TIMEOUT", line):
                 timeout_occurred = True
 
@@ -171,23 +176,41 @@ def determine_test_pass_fail(test_path: pathlib.Path) -> TestResult:
                 fail_string_found = True
 
     if (timeout_occurred):
-        return TestResult.TIMEOUT
+        return TestResultCode.TIMEOUT
 
     if (fail_count == 0) and (pass_string_found) and (not fail_string_found):
-        return TestResult.PASS
+        return TestResultCode.PASS
     else:
-        return TestResult.FAIL
+        return TestResultCode.FAIL
 
+
+
+
+def create_test_run_name(args: TestRunnerArguments) -> str:
+    name: str
+    stringified_plusargs: list[str] = []
+    sorted_plusargs: list[str]
+
+    name = f"{args.test_name}"
+    if len(args.plusargs) != 0:
+        sorted_plusargs = sorted(args.plusargs)
+        for pa in sorted_plusargs:
+            stringified_plusargs.append(re.sub(r"=", r"_", pa))
+        name += "_" + "_".join(stringified_plusargs) + "_"
+    name += f"_{args.seed}"
+
+    return name
 
 
 def run_test(args: TestRunnerArguments) -> TestResult:
     test_path: pathlib.Path
-    seed: int
+    test_name: str
 
-    seed = args.seed if args.seed != None else randint(0, 4294967295)
-    test_path = create_test_run_directory(args.build_dir, args.run_dir, args.test_name, seed)
-    run_simulation(test_path, seed, args.test_name, args.uvm_verbosity, not args.no_print_stdout, args.highlight_stdout, args.plusargs)
-    return determine_test_pass_fail(test_path)
+    args.seed = args.seed if args.seed != None else randint(0, 4294967295)
+    test_name = create_test_run_name(args)
+    test_path = create_test_run_directory(args.build_dir, args.run_dir, test_name, args.seed)
+    run_simulation(test_path, args.seed, args.test_name, args.uvm_verbosity, not args.no_print_stdout, args.highlight_stdout, args.plusargs)
+    return TestResult(determine_test_pass_fail(test_path), test_name)
 
 
 
@@ -197,10 +220,10 @@ def main() -> TestResult:
 
     args = parser.parse_args(namespace=TestRunnerArguments())
     result = run_test(args)
-    print(f"Test finished with status {result.name}")
+    print(f"Test {result.testname} finished with status {result.code.name}")
     return result
 
 
 
 if __name__ == "__main__":
-    exit(main().value)
+    exit(main().code.value)
