@@ -58,7 +58,7 @@ def parse_regression_file(regressions_dir: str, regression_name: str, regression
     with regression_file_path.open("r", encoding="utf-8") as r:
         for line in r:
             line = re.sub(r"#.*$", r"", line)
-            line = line.strip().lower()
+            line = line.strip()
             if line.isspace() or line == "":
                 continue # Skip empty lines or lines that were only comments
 
