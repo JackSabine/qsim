@@ -80,8 +80,7 @@ def compile(clean_build: bool) -> int:
 
         subprocess_result = subprocess.run(
             "make",
-            check=True,
-            timeout=120
+            check=True
         )
 
         return subprocess_result.returncode
